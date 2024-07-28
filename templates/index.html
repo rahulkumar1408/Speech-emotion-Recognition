@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../static/style.css">
+    <title>Speech Emotion Recognition</title>
+</head>
+<body>
+    <h1>Speech Emotion Recognition</h1>
+    <form id="uploadForm" action="/predict" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" accept="audio/*" required>
+        <button type="submit">Upload and Analyze</button>
+    </form>
+    <hr>
+    <h2>Record Audio</h2>
+    <button id="recordButton">Record</button>
+    <button id="stopButton" disabled>Stop</button>
+    <audio id="audio" controls></audio>
+    <div id="emotionResult" class="result">The Predicted emotion is : {{ emotion }}</div>
+    <script>
+        let chunks = [];
+        let mediaRecorder;
+
+        document.getElementById('recordButton').addEventListener('click', async () => {
+            let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.start();
+
+            mediaRecorder.ondataavailable = function(event) {
+                chunks.push(event.data);
+            };
+
+            mediaRecorder.onstop = function() {
+                let blob = new Blob(chunks, { type: 'audio/wav; codecs=opus' });
+                chunks = [];
+                let audioURL = window.URL.createObjectURL(blob);
+                document.getElementById('audio').src = audioURL;
+                uploadAudio(blob);
+            };
+
+            document.getElementById('stopButton').disabled = false;
+            document.getElementById('recordButton').disabled = true;
+        });
+
+        document.getElementById('stopButton').addEventListener('click', () => {
+            mediaRecorder.stop();
+            document.getElementById('stopButton').disabled = true;
+            document.getElementById('recordButton').disabled = false;
+        });
+
+        function uploadAudio(blob) {
+            let formData = new FormData();
+            formData.append('file', blob, 'recording.wav');
+            fetch('/predict', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayEmotion(data.emotion);
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function displayEmotion(emotion) {
+            const resultDiv = document.getElementById('emotionResult');
+            resultDiv.textContent = {emotion};
+            resultDiv.className = 'result'; // Reset class
+
+            // Set class based on emotion
+            switch ({emotion}.toLowerCase()) {
+                case 'happy':
+                    resultDiv.classList.add('green');
+                    break;
+                case 'sad':
+                    resultDiv.classList.add('blue');
+                    break;
+                case 'angry':
+                    resultDiv.classList.add('red');
+                    break;
+                case 'fearful':
+                    resultDiv.classList.add('purple');
+                    break;
+                default:
+                    resultDiv.classList.add('default');
+                    break;
+            }
+            
+            // Add transition effect
+            resultDiv.style.transition = 'all 0.5s ease-in-out';
+            resultDiv.style.transform = 'scale(1.1)'; // Slightly enlarge the text for effect
+            setTimeout(() => {
+                resultDiv.style.transform = 'scale(1)';
+            }, 500);
+        }
+    </script>
+</body>
+</html>
