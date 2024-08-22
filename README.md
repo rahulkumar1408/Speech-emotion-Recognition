@@ -102,5 +102,12 @@ used for this task, which contains emotional speech recordings.
 
 ## Screenshots
 
-![App Screenshot](https://via.placeholder.com/468x300?text=App+Screenshot+Here)
+**Home Page**
+![Home Page](./Screenshots/HomePage.png)
+
+**System Page**
+![System Page](./Screenshots/System.png)
+
+**Output Page**
+![Output Page](./Screenshots/Output.png)
 
